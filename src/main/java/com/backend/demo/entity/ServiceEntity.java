@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -24,4 +25,6 @@ public class ServiceEntity {
     @ManyToMany(mappedBy = "services")
     @JsonIgnore
     private List<Garage> garages;
+
+
 }

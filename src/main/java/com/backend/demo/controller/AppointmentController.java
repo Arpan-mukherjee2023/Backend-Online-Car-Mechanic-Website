@@ -38,15 +38,7 @@ public class AppointmentController {
         return ResponseEntity.ok(appointments);
     }
 
-    @PostMapping("/book")
-    public ResponseEntity<?> bookAppointment(@RequestBody AppointmentRequestDTO request) {
-        try {
-            AppointmentBookingResponse appointment = appointmentService.bookAppointment(request);
-            return ResponseEntity.ok(appointment);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
+
 
 
 
