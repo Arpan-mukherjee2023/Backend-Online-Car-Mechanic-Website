@@ -7,16 +7,15 @@ import java.time.LocalTime;
 
 @Data
 public class AppointmentRequestDTO {
+    private String registrationNumber;
+    private String serviceId;
+    private String garageId;
     private String appointmentDate;
     private String appointmentTime;
-    private String garageId;
-    private String registrationNumber;
-    private String serviceType; // service ID
-    private String userEmail;
+    private String canWait;
     private String userId;
     private String userName;
-    private boolean confirmWait = false; // default false
+    private String userEmail;
+
+    // Getters and Setters
 }
-
-
-

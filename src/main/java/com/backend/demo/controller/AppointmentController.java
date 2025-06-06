@@ -38,8 +38,9 @@ public class AppointmentController {
         return ResponseEntity.ok(appointments);
     }
 
-
-
-
+    @PostMapping("/book")
+    public String bookAppointment(@RequestBody AppointmentRequestDTO appointment) {
+       return appointmentService.bookAppointment(appointment);
+    }
 
 }

@@ -9,8 +9,10 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Entity
-@Data
-@Table(name = "appointment")
+@Data@Table(
+        name = "appointment",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"mechanic_id", "appointment_date", "appointment_time"})
+)
 public class Appointment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,6 +27,9 @@ public class Appointment {
 
     @Column(name = "service_type", nullable = false)
     private String serviceType;
+
+    @Column(name = "service_id", nullable = false) // Add this line
+    private String serviceId;
 
     @Enumerated(EnumType.STRING)
     private ServiceStatus status;
@@ -47,7 +52,7 @@ public class Appointment {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "mechanic_id", nullable = true, unique = true)
+    @JoinColumn(name = "mechanic_id", nullable = true)
     @JsonIgnore
     private Mechanic mechanic;
 
