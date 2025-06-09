@@ -75,6 +75,10 @@ public class UserService {
         userRepository.save(user);
     }
 
+    public Optional<User> getUserById(String userId) {
+        return userRepository.findByUserId(userId);
+    }
+
     public void updateUserEmail(String newEmail, String password, String userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with ID" + userId));

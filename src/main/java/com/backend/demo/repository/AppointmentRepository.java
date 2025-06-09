@@ -35,6 +35,10 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     List<Appointment> findUpcomingAppointmentsByGarageId(String garageId, LocalDate currentDate, LocalTime currentTime);
 
     boolean existsByMechanicAndAppointmentDateAndAppointmentTime(Mechanic mechanic, LocalDate date, LocalTime time);
+
+    @Query("SELECT a FROM Appointment a JOIN FETCH a.user u JOIN FETCH a.vehicle v JOIN FETCH a.garage g WHERE g.garageId = :garageId")
+    List<Appointment> findAllByGarageIdWithDetails(String garageId);
+
 }
 
 

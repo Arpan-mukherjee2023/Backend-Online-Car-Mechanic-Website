@@ -1,11 +1,12 @@
 package com.backend.demo.service;
 
-import com.backend.demo.DTO.AppointmentBookingResponse;
 import com.backend.demo.DTO.AppointmentDTO;
 import com.backend.demo.DTO.AppointmentDetailsDTO;
 import com.backend.demo.DTO.AppointmentRequestDTO;
+import com.backend.demo.DTO.AppointmentResponseDTO;
 import com.backend.demo.entity.*;
 import com.backend.demo.repository.*;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,7 +14,9 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class AppointmentService {
@@ -36,6 +39,8 @@ public class AppointmentService {
     @Autowired
     private ServiceRepository serviceRepository;
 
+    @Autowired
+    private EmailService emailService;
 
 
     public List<AppointmentDetailsDTO> getAppointmentsByUserId(String userId) {
@@ -87,19 +92,58 @@ public class AppointmentService {
         return dtoList;
     }
 
-
+    @Transactional // Ensures the entire operation is a single transaction
     public void cancelAppointment(Long appointmentId) {
-        Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+        // 1. Find the appointment
+        Optional<Appointment> optionalAppointment = appointmentRepository.findById(appointmentId);
 
-        // If mechanic assigned, free mechanic
-        Mechanic mechanic = appointment.getMechanic();
-        if (mechanic != null) {
-            mechanic.setIsAvailable(true);
-            mechanicRepository.save(mechanic);
+        if (optionalAppointment.isEmpty()) {
+            throw new NoSuchElementException("Appointment with ID " + appointmentId + " not found.");
         }
 
+        Appointment appointment = optionalAppointment.get();
+
+        // 2. Optional: Add business logic to check if cancellation is allowed
+        // For example, you might only allow cancellation if status is SCHEDULED or PENDING
+        // if (appointment.getStatus() == ServiceStatus.COMPLETED || appointment.getStatus() == ServiceStatus.CANCELLED) {
+        //     throw new IllegalStateException("Appointment cannot be cancelled as it is already " + appointment.getStatus());
+        // }
+
+        // 3. Store details for email before deletion (as relationships might be lazy-loaded)
+        String userEmail = appointment.getUser() != null ? appointment.getUser().getEmail() : "N/A";
+        String userName = appointment.getUser() != null ? appointment.getUser().getName() : "N/A";
+        String serviceType = appointment.getServiceType();
+        String appointmentDate = appointment.getAppointmentDate() != null ? appointment.getAppointmentDate().toString() : "N/A";
+        String appointmentTime = appointment.getAppointmentTime() != null ? appointment.getAppointmentTime().toString() : "N/A";
+        String garageName = appointment.getGarage() != null ? appointment.getGarage().getName() : "N/A";
+        String vehicleDetails = appointment.getVehicle() != null ?
+                appointment.getVehicle().getYear() + " " +
+                        appointment.getVehicle().getMake() + " " +
+                        appointment.getVehicle().getModel() : "N/A";
+
+        // 4. Delete the appointment
         appointmentRepository.delete(appointment);
+        // Or simply: appointmentRepository.deleteById(appointmentId);
+
+        // 5. Send cancellation email
+        String subject = "Appointment Cancellation Confirmation - " + garageName;
+        String body = String.format(
+                "Dear %s,\n\n" +
+                        "This email confirms that your appointment with %s has been successfully cancelled.\n\n" +
+                        "Appointment Details:\n" +
+                        "  - Appointment ID: %d\n" +
+                        "  - Service Type: %s\n" +
+                        "  - Date: %s\n" +
+                        "  - Time: %s\n" +
+                        "  - Vehicle: %s\n\n" +
+                        "If you have any questions, please contact us.\n\n" +
+                        "Thank you,\n" +
+                        "%s Team",
+                userName, garageName, appointment.getAppointmentId(), serviceType,
+                appointmentDate, appointmentTime, vehicleDetails, garageName
+        );
+
+        emailService.sendEmail(userEmail, subject, body);
     }
 
 
@@ -177,4 +221,24 @@ public class AppointmentService {
 
         return "Appointment confirmed with mechanic " + mechanic.getMechanicName() + " at time " + time.toString();
     }
+
+    public List<AppointmentResponseDTO> getAppointmentsByGarageId(String garageId) {
+        List<Appointment> appointments = appointmentRepository.findAllByGarageIdWithDetails(garageId);
+
+        return appointments.stream().map(a -> new AppointmentResponseDTO(
+                a.getAppointmentId(),
+                a.getUser().getName(),
+                a.getUser().getEmail(),
+                a.getUser().getPhone(),
+                a.getVehicle().getMake(),
+                a.getVehicle().getModel(),
+                a.getVehicle().getYear(),
+                a.getVehicle().getRegistrationNumber(),
+                a.getAppointmentDate(),
+                a.getAppointmentTime(),
+                a.getServiceType(),
+                a.getStatus().toString()
+        )).collect(Collectors.toList());
+    }
+
 }

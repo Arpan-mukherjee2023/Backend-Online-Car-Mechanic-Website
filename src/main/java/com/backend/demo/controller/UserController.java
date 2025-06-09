@@ -13,6 +13,7 @@ import com.backend.demo.service.UserService;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.springframework.http.ResponseEntity.ok;
 
@@ -149,6 +150,11 @@ public class UserController {
             System.out.println(e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
+    }
+
+    @GetMapping("/{userId}")
+    public Optional<User> getUserByUserId(@PathVariable String userId) {
+        return userService.getUserById(userId);
     }
 
 }
