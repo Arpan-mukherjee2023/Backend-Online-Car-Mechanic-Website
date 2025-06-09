@@ -19,7 +19,7 @@ public class RazorPayController {
     @PostMapping("/create-order")
     public ResponseEntity<Map<String, Object>> createOrder(@RequestBody Map<String, Object> requestData) {
         try {
-            RazorpayClient razorpay = new RazorpayClient("rzp_test_ysjNPJ8UuaZa78", "Guhp3vy9eBxI4Baz1TsmD0wy");
+            RazorpayClient razorpay = new RazorpayClient("YOUR KEY ID", "YOUR SECRET KEY");
 
             int amount = ((Number) requestData.get("amount")).intValue() * 100; // Razorpay uses paise
             String currency = (String) requestData.get("currency");
