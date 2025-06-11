@@ -26,6 +26,11 @@ public class MechanicService {
             dto.setEmail(mechanic.getMechanicEmail());
             dto.setSpecialization(mechanic.getSpecialization());
             dto.setAvailable(mechanic.getIsAvailable());
+            dto.setAge(mechanic.getMechanicAge());
+            dto.setExp(mechanic.getYearsOfExperience());
+            dto.setRating(mechanic.getRating());
+            dto.setAddress(mechanic.getMechanicAddress());
+            dto.setAadharNumber(mechanic.getMechanicAadharNumber());
             return dto;
         }).toList();
     }

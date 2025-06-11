@@ -1,19 +1,17 @@
 package com.backend.demo.service;
 
 import com.backend.demo.DTO.BillDTO;
-import com.backend.demo.DTO.GarageInfoDTO;
+import com.backend.demo.DTO.OrderNotification;
 import com.backend.demo.DTO.OrderRequestDTO;
-import com.backend.demo.entity.GarageProduct;
-import com.backend.demo.entity.Order;
-import com.backend.demo.entity.Product;
-import com.backend.demo.entity.User;
+import com.backend.demo.entity.*;
 import com.backend.demo.repository.GarageProductRepository;
 import com.backend.demo.repository.OrderRepository;
 import com.backend.demo.repository.ProductRepository;
-import jakarta.validation.constraints.Email;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -39,6 +37,14 @@ public class OrderService {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+
+
+
+
+    private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
+
     public BillDTO generateBill(String productId, Long variantId, int quantity, String garageId) {
         GarageProduct gp = garageProductRepository.findByProductIdAndVariantId(productId, variantId)
                 .stream()
@@ -60,6 +66,7 @@ public class OrderService {
 
     
     public Order placeOrder(OrderRequestDTO request) {
+        logger.info("Received order placement request: {}", request.toString());
         // 1. Find the garage product
         GarageProduct gp = garageProductRepository
                 .findByProductIdAndVariantId(request.getProductId(), request.getVariantId())
@@ -80,6 +87,7 @@ public class OrderService {
 
         Product product = productService.getProductById(request.getProductId());
         Optional<User> user = userService.getUserById(request.getUserId());
+
 
         // 4. Calculate bill
         BillDTO bill = generateBill(request.getProductId(), request.getVariantId(), request.getQuantity(), request.getGarageId());
@@ -119,8 +127,38 @@ public class OrderService {
         );
 
         emailService.sendEmail(user.get().getEmail(), subject, emailBody);
-        // 6. Save and return order
-        return orderRepository.save(order);
+
+        Order savedOrder = orderRepository.save(order);
+
+        OrderNotification orderNotification = new OrderNotification();
+
+        orderNotification.setPaymentMode(savedOrder.getPaymentMode());
+        orderNotification.setUserName(user.get().getName());
+        orderNotification.setUserEmailId(user.get().getEmail());
+        orderNotification.setUserPhoneNumber(user.get().getPhone());
+
+        Long targetVariantId = order.getVariantId();
+        List<ProductVariant> variants = product.getVariants();
+        String variantValue = variants.stream()
+                .filter(v -> v.getVariantId() == targetVariantId)
+                .map(ProductVariant::getVariantValue)
+                .findFirst()
+                .orElse(null);
+        orderNotification.setProductVariantName(variantValue);
+        orderNotification.setTotalAmount(order.getTotalAmount());
+        orderNotification.setProductName(product.getProductName());
+        orderNotification.setQuantity(order.getQuantity());
+        orderNotification.setPaymentStatus(order.getPaymentStatus());
+        orderNotification.setOrderDate(order.getOrderDate());
+
+
+
+        // Web Socket configuration for sending message to the garage
+
+        messagingTemplate.convertAndSend("/garage/" + order.getGarageId(), orderNotification);
+
+        // 8. Save and return the order entity to the database
+        return savedOrder;
     }
 
 }

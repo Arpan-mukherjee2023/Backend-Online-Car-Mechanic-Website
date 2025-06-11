@@ -1,16 +1,21 @@
 package com.backend.demo.controller;
 
 import com.backend.demo.DTO.GarageDTO;
+import com.backend.demo.DTO.GarageRegistrationDTO;
 import com.backend.demo.DTO.ServiceDTO;
 import com.backend.demo.entity.Garage;
+import com.backend.demo.entity.GarageType;
 import com.backend.demo.entity.ServiceProvided;
 import com.backend.demo.entity.User;
+import com.backend.demo.repository.GarageRepository;
 import com.backend.demo.service.GarageService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.sql.Time;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -23,7 +28,11 @@ import static org.springframework.http.ResponseEntity.ok;
 @CrossOrigin(origins = "http://localhost:5173")
 public class GarageController {
 
-    private final GarageService garageService;
+    @Autowired
+    private GarageService garageService;
+
+    @Autowired
+    private GarageRepository garageRepository;
 
 
     private GarageDTO mapToGarageDTO(Garage garage) {
@@ -59,6 +68,42 @@ public class GarageController {
         List<Garage> garages = garageService.searchByName(query);
         return garages.stream().map(this::mapToGarageDTO).toList();
     }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> registerGarage(@RequestBody GarageRegistrationDTO request) {
+        Garage garage = new Garage();
+
+        garage.setGarageId(request.getGarageId());
+        garage.setName(request.getName());
+        garage.setEmail(request.getEmail());
+        garage.setPhoneNumber(request.getPhone());
+        garage.setPassword(request.getPassword());
+        garage.setProprietorName(request.getProprietorName());
+        garage.setLocationAddress(request.getLocationAddress());
+
+        // Convert String time to java.sql.Time
+        garage.setOpenTime(Time.valueOf(request.getOpeningTime() + ":00")); // "09:00" -> "09:00:00"
+        garage.setCloseTime(Time.valueOf(request.getClosingTime() + ":00"));
+
+        garage.setGarageType(GarageType.valueOf(request.getGarageType()));
+
+        garage.setLatitude(BigDecimal.valueOf(request.getLatitude()));
+        garage.setLongitude(BigDecimal.valueOf(request.getLongitude()));
+
+        // Set default values for ratings and reviewCount
+        garage.setRatings(BigDecimal.valueOf(0.00));
+        garage.setReviewCount(0);
+
+        // You may want to set other defaults as needed
+        garage.setIsOpen(false);
+        garage.setTotalRevenue(BigDecimal.ZERO);
+
+        // Save garage to database (assuming you have garageRepository)
+        garageRepository.save(garage);
+
+        return ResponseEntity.ok("Garage registered successfully");
+    }
+
 
     // handles the garage owner login
     @PostMapping("/login")

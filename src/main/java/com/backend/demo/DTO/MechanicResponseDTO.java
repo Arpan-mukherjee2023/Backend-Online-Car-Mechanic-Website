@@ -16,4 +16,9 @@ public class MechanicResponseDTO {
     private String specialization;
     @JsonProperty("isAvailable")
     private boolean isAvailable;
+    private Integer age;
+    private Integer exp;
+    private double rating;
+    private String aadharNumber;
+    private String address;
 }
