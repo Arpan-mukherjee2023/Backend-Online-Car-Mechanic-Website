@@ -1,6 +1,7 @@
 package com.backend.demo.controller;
 
 import com.backend.demo.DTO.*;
+import com.backend.demo.entity.Garage;
 import com.backend.demo.service.GarageService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -47,6 +48,8 @@ public class UserController {
             return ResponseEntity.status(401).body("Invalid credentials");
         }
     }
+
+
 
     @PutMapping("/settings/update-name")
     public ResponseEntity<APIResponseDTO> updateName(@RequestBody UpdateRequestDTO request) {

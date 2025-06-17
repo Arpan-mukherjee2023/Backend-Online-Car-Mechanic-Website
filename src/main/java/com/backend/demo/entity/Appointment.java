@@ -9,7 +9,8 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Entity
-@Data@Table(
+@Data
+@Table(
         name = "appointment",
         uniqueConstraints = @UniqueConstraint(columnNames = {"mechanic_id", "appointment_date", "appointment_time"})
 )

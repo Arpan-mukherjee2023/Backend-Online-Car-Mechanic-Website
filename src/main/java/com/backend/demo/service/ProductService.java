@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
 import com.backend.demo.entity.Product;
 import com.backend.demo.repository.ProductRepository;
 
@@ -53,13 +55,23 @@ public class ProductService {
         ProductVariant productVariant = productVariantRepository.findById(dto.getVariantId())
                 .orElseThrow(() -> new RuntimeException("Product variant not found"));
 
-        GarageProduct gp = new GarageProduct();
-        gp.setGarage(garage);
-        gp.setProduct(product);
-        gp.setProductVariant(productVariant);
-        gp.setStock(dto.getStock());
 
-        garageProductRepository.save(gp);
+        Optional<GarageProduct> gproduct = garageProductRepository.findByGarage_GarageIdAndProduct_ProductIdAndProductVariant_VariantId(dto.getGarageId(), dto.getProductId(), dto.getVariantId());
+
+        if(gproduct.isPresent()) {
+            GarageProduct existingProduct = gproduct.get();
+            existingProduct.setStock(existingProduct.getStock() + dto.getStock());
+            garageProductRepository.save(existingProduct);
+        } else {
+
+            GarageProduct gp = new GarageProduct();
+            gp.setGarage(garage);
+            gp.setProduct(product);
+            gp.setProductVariant(productVariant);
+            gp.setStock(dto.getStock());
+
+            garageProductRepository.save(gp);
+        }
     }
 
 

@@ -11,6 +11,8 @@ import com.backend.demo.repository.GarageRepository;
 import com.backend.demo.service.GarageService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -125,6 +127,18 @@ public class GarageController {
         }
     }
 
+    @PostMapping("/logout/{garageId}")
+    public ResponseEntity<String> logOut(@PathVariable String garageId) {
+        Optional<Garage> garageOpt = garageRepository.findByGarageId(garageId);
+        if(garageOpt.isPresent()) {
+            Garage garage = garageOpt.get();
+            garage.setIsOpen(false);
+            garageRepository.save(garage);
+            return ResponseEntity.ok("Log Out Successful");
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Garage not Found");
+        }
+    }
 
 
     // finds  the nearby garage to the users location
